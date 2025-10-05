@@ -1,3 +1,4 @@
+<!-- TODO: Split page and components in separate files/folders-->
 <div class="container">
   <h1>Products</h1>
 
@@ -16,8 +17,7 @@
       </div>
     </div>
   </div>
-
-  <!-- Pagination -->
+  
   <div class="pagination" *ngIf="lastPage > 1">
     <button class="pagination-button" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
       Previous
