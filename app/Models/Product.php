@@ -17,7 +17,7 @@ class Product extends Model
     ];
 
     /**
-     * Get the cart items for this product.
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function cartItems()
     {
@@ -25,8 +25,6 @@ class Product extends Model
     }
 
     /**
-     * Get all products
-     *
      * @return Collection
      */
     public static function getAllProducts(): Collection
@@ -35,8 +33,6 @@ class Product extends Model
     }
 
     /**
-     * Update product stock
-     *
      * @param int $quantity
      * @return bool
      */
@@ -45,7 +41,6 @@ class Product extends Model
         try {
             DB::beginTransaction();
 
-            // Check if we have enough stock
             if ($this->stock + $quantity < 0) {
                 DB::rollBack();
                 return false;

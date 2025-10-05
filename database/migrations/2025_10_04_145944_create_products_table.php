@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * @return void
      */
     public function up(): void
     {
+        //It would be better to work with reserved and available stock, but for simplicity of the project we will work with 1 stock.
+
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');

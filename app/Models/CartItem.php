@@ -15,8 +15,7 @@ class CartItem extends Model
     ];
 
     /**
-     *
-     * Get the product that this cart item belongs to.
+     * Get the product from the cart.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -26,7 +25,7 @@ class CartItem extends Model
     }
 
     /**
-     * Get cart items by session ID
+     * Get all cart items by session ID
      *
      * @param string $sessionId
      * @return Collection
@@ -37,8 +36,6 @@ class CartItem extends Model
     }
 
     /**
-     * Add item to cart
-     *
      * @param string $sessionId
      * @param int $productId
      * @param int $quantity
@@ -49,101 +46,72 @@ class CartItem extends Model
         try {
             DB::beginTransaction();
 
-            $product = Product::find($productId);
+            $existingItemInCart = self::where('session_id', $sessionId)->where('product_id', $productId)->first();
+            if ($existingItemInCart) {
+                //update existing cart item
+                $cartItem = $existingItemInCart;
+                $quantity = $cartItem->quantity + $quantity;
+                $cartItem->quantity = $quantity;
+            } else {
+                //create new cart item
+                $cartItem = new self([
+                    'session_id' => $sessionId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity
+                ]);
+            }
 
+            $product = Product::find($productId);
             if (!$product || $product->stock < $quantity || $quantity <= 0) {
                 DB::rollBack();
                 return null;
             }
 
-            // Check if product already in cart
-            $existingItem = self::where('session_id', $sessionId)
-                ->where('product_id', $productId)
-                ->first();
-
-            if ($existingItem) {
-                // Update quantity of existing cart item
-                $newQuantity = $existingItem->quantity + $quantity;
-
-                if ($product->stock < $newQuantity) {
-                    DB::rollBack();
-                    return null;
-                }
-
-                $existingItem->quantity = $newQuantity;
-                $existingItem->save();
-
-                // Update stock
-                $product->updateStock(-$quantity);
-
-                DB::commit();
-                return $existingItem;
-            }
-
-            // Create new cart item
-            $cartItem = new self([
-                'session_id' => $sessionId,
-                'product_id' => $productId,
-                'quantity' => $quantity
-            ]);
-
             $cartItem->save();
-
-            // Update stock
             $product->updateStock(-$quantity);
-
-            DB::commit();
-            return $cartItem;
         } catch (\Exception $e) {
             DB::rollBack();
             return null;
         }
+
+        DB::commit();
+        return $cartItem;
     }
 
     /**
-     * Update cart item quantity
-     *
      * @param int $quantity
      * @return bool
      */
-    public function updateQuantity(int $quantity): bool
+    public function updateQuantity(int $totalQuantity): bool
     {
+        if ($totalQuantity <= 0) {
+            return $this->removeFromCart();
+        }
+
         try {
             DB::beginTransaction();
-
             $this->load('product');
 
-            $quantityDifference = $quantity - $this->quantity;
-
-            // Check if we have enough stock for the increased quantity
+            $quantityDifference = $totalQuantity - $this->quantity;
             if ($quantityDifference > 0 && $this->product->stock < $quantityDifference) {
                 DB::rollBack();
                 return false;
             }
 
-            // If quantity is 0 or less, remove item from cart
-            if ($quantity <= 0) {
-                return $this->removeFromCart();
-            }
-
-            // Update cart item quantity
-            $this->quantity = $quantity;
+            $this->quantity = $totalQuantity;
             $this->save();
-
-            // Update stock
             $this->product->updateStock(-$quantityDifference);
 
             DB::commit();
-            return true;
         } catch (\Exception $e) {
             DB::rollBack();
             return false;
         }
+
+        return true;
     }
 
     /**
-     * Remove item from cart
-     *
      * @return bool
      */
     public function removeFromCart(): bool
@@ -151,17 +119,15 @@ class CartItem extends Model
         try {
             DB::beginTransaction();
 
-            // Return quantity to product stock
             $this->product->updateStock($this->quantity);
-
-            // Delete cart item
             $result = $this->delete();
 
             DB::commit();
-            return $result;
         } catch (\Exception $e) {
             DB::rollBack();
             return false;
         }
+
+        return $result;
     }
 }
