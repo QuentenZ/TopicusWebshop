@@ -1,0 +1,32 @@
+<div class="container">
+  <h1>Products</h1>
+
+  <div class="loading" *ngIf="loading">
+    <p>Loading products...</p>
+  </div>
+
+  <div class="product-grid" *ngIf="!loading">
+    <div class="product-card" *ngFor="let product of products" [routerLink]="['/products', product.id]">
+      <div class="product-image">
+        <img [src]="'http://localhost:8181/' + product.image_path" [alt]="product.name">
+      </div>
+      <div class="product-details">
+        <h3 class="product-name">{{ product.name }}</h3>
+        <p class="product-price">€{{ product.price }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="lastPage > 1">
+    <button class="pagination-button" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      Previous
+    </button>
+
+    <span class="pagination-info">Page {{ currentPage }} of {{ lastPage }}</span>
+
+    <button class="pagination-button" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">
+      Next
+    </button>
+  </div>
+</div>

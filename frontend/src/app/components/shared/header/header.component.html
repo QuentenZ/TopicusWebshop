@@ -1,0 +1,19 @@
+<header class="site-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="logo">
+        <a routerLink="/">Topicus Webshop Casus</a>
+      </div>
+
+      <div class="cart-container">
+        <button class="cart-toggle" (click)="toggleCart()" aria-label="Open cart">
+          <fa-icon [icon]="cartIcon" class="cart-icon"></fa-icon>
+        </button>
+
+        <div class="cart-dropdown-container" *ngIf="isCartOpen">
+          <app-cart></app-cart>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
